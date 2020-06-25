@@ -1,0 +1,10 @@
+spring:
+  profiles: prod
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+
+server:
+  port: 80
+
