@@ -1,13 +1,12 @@
 package com.kakaopay.flex.api.roomuser.entity;
 
-import com.kakaopay.flex.api.receiveuser.entity.ReceiveUser;
-import com.kakaopay.flex.api.room.entity.Room;
 import lombok.*;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Getter
 @Setter

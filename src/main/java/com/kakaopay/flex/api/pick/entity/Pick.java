@@ -1,4 +1,4 @@
-package com.kakaopay.flex.api.sprinkledistribute.entity;
+package com.kakaopay.flex.api.pick.entity;
 
 import lombok.*;
 
@@ -7,6 +7,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -15,14 +16,16 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class SprinkleDistribute implements Serializable {
+public class Pick implements Serializable {
 
 	@Id @GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
 
 	private String token;
-	private long distributedMoney;
+	private String roomId;
+	private long sendUserId;
 	private long receiveUserId;
-	private boolean isFinishReceive;
+	private int money;
+	private LocalDateTime sprinkleDate;
 
 }

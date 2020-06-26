@@ -44,11 +44,13 @@ public class SprinkleController {
 
 	@PutMapping(value="")
 	public Object doReceive(@RequestBody RequestSprinkle requestSprinkle,
-							@RequestHeader("X-USER-ID") String xUserId) throws Exception {
+							@RequestHeader("X-USER-ID") String xUserId,
+							@RequestHeader("X-ROOM-ID") String xRoomId) throws Exception {
 		try {
 			requestSprinkle.setXUserId(Long.parseLong(xUserId));
+			requestSprinkle.setXRoomId(xRoomId);
 			return ResponseEntity.ok(sprinkleService.doReceive(requestSprinkle));
-		} catch (ServerErrorException e) {
+		} catch (NumberFormatException e) {
 			log.error("{}", e);
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
 		}
