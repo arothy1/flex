@@ -6,6 +6,8 @@ import com.kakaopay.flex.api.roomuser.repository.RoomUserRepository;
 import com.kakaopay.flex.api.sprinkle.entity.Sprinkle;
 import com.kakaopay.flex.api.sprinkle.repository.SprinkleRepository;
 import com.kakaopay.flex.api.sprinkle.vo.RequestSprinkle;
+import com.kakaopay.flex.api.sprinkle.vo.ResponseSprinkle;
+import com.sun.jdi.request.InvalidRequestStateException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -13,10 +15,7 @@ import org.springframework.util.StringUtils;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,10 +60,10 @@ public class SprinkleService {
 		this.xUserId = requestSprinkle.getXUserId();
 		this.xRoomId = requestSprinkle.getXRoomId();
 
-		int pickkedMoney = 0;
+		int pickedMoney = 0;
 
 		// 1. 토큰에 해당하는 픽 목록을 가져온다.
-		List<Pick> pickList = pickRepository.findByToken(token);
+		List<Pick> pickList = pickRepository.findByToken(this.token);
 
 		// 2. 이미 받은 유저인지 체크한다.
 		boolean isAlreadyPicked = pickList.stream()
@@ -91,12 +90,55 @@ public class SprinkleService {
 
 		if (maybyPick.isPresent()) {
 			Pick pick = maybyPick.get();
-			pick.setReceiveUserId(xUserId);
+			pick.setReceiveUserId(this.xUserId);
 			pickRepository.save(pick);
-			pickkedMoney = pick.getMoney();
+			pickedMoney = pick.getMoney();
 		}
 
-		return pickkedMoney;
+		return pickedMoney;
+	}
+
+	public Object getSprinkle(RequestSprinkle requestSprinkle) {
+		this.token = requestSprinkle.getToken();
+		this.xUserId = requestSprinkle.getXUserId();
+		this.xRoomId = requestSprinkle.getXRoomId();
+
+		Optional<Sprinkle> maybeSprinkle = this.sprinkleRepository.findByTokenAndSendUserId(this.token, this.xUserId);
+		if (maybeSprinkle.isPresent()) {
+			Sprinkle sprinkle = maybeSprinkle.get();
+
+			if (sprinkle.getSendTime().isBefore(LocalDateTime.now().minusDays(7))) {
+				throw new InvalidRequestStateException("access denied");
+			}
+
+			LocalDateTime sendTime = sprinkle.getSendTime();
+			int sendMoney = sprinkle.getMoney();
+
+			List<Pick> pickList = this.pickRepository.findByToken(this.token);
+			int totalReceiveMoney = pickList.stream()
+					.collect(Collectors.summingInt(value -> value.getMoney()));
+
+			List<Map<String, Long>> finishReceiveInfoList = pickList.stream()
+					.filter(pick -> pick.getReceiveUserId() != null)
+					.map(pick -> {
+						Map<String, Long> info = new HashMap();
+						info.put("receiveMoney", Long.valueOf(pick.getMoney()));
+						info.put("receiveUserId", pick.getReceiveUserId());
+						return info;
+					})
+					.collect(Collectors.toList());
+
+			ResponseSprinkle responseSprikle = ResponseSprinkle.builder()
+					.sprinkleTime(sendTime)
+					.sprinkleMoney(sendMoney)
+					.finishTotalReceiveMoney(totalReceiveMoney)
+					.finishReceiveInfoList(finishReceiveInfoList)
+					.build();
+
+			return responseSprikle;
+		} else {
+			throw new InvalidRequestStateException("access denied");
+		}
 	}
 
 
@@ -314,4 +356,5 @@ public class SprinkleService {
 		resultList.add(lessMoney);
 		return resultList;
 	}
+
 }

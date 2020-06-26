@@ -24,7 +24,7 @@ public class Pick implements Serializable {
 	private String token;
 	private String roomId;
 	private long sendUserId;
-	private long receiveUserId;
+	private Long receiveUserId;
 	private int money;
 	private LocalDateTime sprinkleDate;
 

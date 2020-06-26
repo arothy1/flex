@@ -57,13 +57,17 @@ public class SprinkleController {
 	}
 
 	@GetMapping(value="")
-	public Object getSprinkle(HttpServletRequest request) {
-		return request.getRequestURI();
-	}
-
-	@ExceptionHandler(Exception.class)
-	public Object handleException() {
-		return ResponseEntity.status(HttpStatus.BAD_GATEWAY);
+	public Object getSprinkle(@RequestBody RequestSprinkle requestSprinkle,
+							  @RequestHeader("X-USER-ID") String xUserId,
+							  @RequestHeader("X-ROOM-ID") String xRoomId) {
+		try {
+			requestSprinkle.setXUserId(Long.parseLong(xUserId));
+			requestSprinkle.setXRoomId(xRoomId);
+			return ResponseEntity.ok(sprinkleService.getSprinkle(requestSprinkle));
+		} catch (NumberFormatException e) {
+			log.error("{}", e);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+		}
 	}
 
 }

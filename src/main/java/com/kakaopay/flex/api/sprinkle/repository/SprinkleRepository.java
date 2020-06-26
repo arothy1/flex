@@ -12,4 +12,6 @@ public interface SprinkleRepository extends JpaRepository<Sprinkle, Long> {
     boolean existsByToken(String token);
 
     Optional<Sprinkle> findByToken(String token);
+
+    Optional<Sprinkle> findByTokenAndSendUserId(String token, long xUserId);
 }
