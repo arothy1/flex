@@ -11,5 +11,4 @@ public interface PickRepository extends JpaRepository<Pick, Long> {
 
     List<Pick> findByToken(String token);
 
-    List<Pick> findByTokenAndRoomId(String token, String roomId);
 }

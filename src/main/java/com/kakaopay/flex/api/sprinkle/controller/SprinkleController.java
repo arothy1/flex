@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.kakaopay.flex.api.sprinkle.service.SprinkleService;
 import com.kakaopay.flex.api.sprinkle.vo.RequestSprinkle;
+import com.kakaopay.flex.exception.InvalidRequestException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -31,7 +32,7 @@ public class SprinkleController {
 	@PostMapping(value="")
 	public Object doSprinkle(@RequestBody RequestSprinkle requestSprinkle,
 							 @RequestHeader("X-USER-ID") String xUserId,
-							 @RequestHeader("X-ROOM-ID") String xRoomId) throws Exception {
+							 @RequestHeader("X-ROOM-ID") String xRoomId) {
 		try {
 			requestSprinkle.setXUserId(Long.parseLong(xUserId));
 			requestSprinkle.setXRoomId(xRoomId);
@@ -45,26 +46,29 @@ public class SprinkleController {
 	@PutMapping(value="")
 	public Object doReceive(@RequestBody RequestSprinkle requestSprinkle,
 							@RequestHeader("X-USER-ID") String xUserId,
-							@RequestHeader("X-ROOM-ID") String xRoomId) throws Exception {
+							@RequestHeader("X-ROOM-ID") String xRoomId) {
 		try {
 			requestSprinkle.setXUserId(Long.parseLong(xUserId));
 			requestSprinkle.setXRoomId(xRoomId);
 			return ResponseEntity.ok(sprinkleService.doReceive(requestSprinkle));
-		} catch (NumberFormatException e) {
+		} catch (NumberFormatException | InvalidRequestException e) {
 			log.error("{}", e);
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
 		}
 	}
 
-	@GetMapping(value="")
-	public Object getSprinkle(@RequestBody RequestSprinkle requestSprinkle,
+	@GetMapping(value="/{token}")
+	public Object getSprinkle(@PathVariable String token,
 							  @RequestHeader("X-USER-ID") String xUserId,
 							  @RequestHeader("X-ROOM-ID") String xRoomId) {
 		try {
-			requestSprinkle.setXUserId(Long.parseLong(xUserId));
-			requestSprinkle.setXRoomId(xRoomId);
+			RequestSprinkle requestSprinkle = RequestSprinkle.builder()
+					.xUserId(Long.parseLong(xUserId))
+					.xRoomId(xRoomId)
+					.token(token)
+					.build();
 			return ResponseEntity.ok(sprinkleService.getSprinkle(requestSprinkle));
-		} catch (NumberFormatException e) {
+		} catch (NumberFormatException | InvalidRequestException e) {
 			log.error("{}", e);
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
 		}

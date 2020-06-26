@@ -9,6 +9,7 @@ import java.io.Serializable;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class RequestSprinkle implements Serializable {
 
 	private long xUserId;
