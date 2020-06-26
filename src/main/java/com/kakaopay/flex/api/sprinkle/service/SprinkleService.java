@@ -1,7 +1,10 @@
 package com.kakaopay.flex.api.sprinkle.service;
 
+import com.kakaopay.flex.api.sprinkle.vo.RequestSprinkle;
+
 public interface SprinkleService {
 
-	boolean findOneByToken(String token);
+	String doSprinkle(RequestSprinkle requestSprinkle) throws Exception;
 
+    Object doReceive(RequestSprinkle requestSprinkle) throws Exception;
 }

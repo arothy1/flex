@@ -1,10 +1,19 @@
+server:
+  port: 80
+  error:
+    include-stacktrace: never
+
 spring:
-  profiles: local
   jpa:
     show-sql: true
     hibernate:
       ddl-auto: create-drop
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
 
-server:
-  port: 80
-
+logging:
+  level:
+    root: debug
+    com.parfait.study.simplelogging.service.SomeService: info

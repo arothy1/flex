@@ -1,5 +1,6 @@
 package com.kakaopay.flex.api.user.entity;
 
+import com.kakaopay.flex.api.room.entity.Room;
 import com.kakaopay.flex.api.sprinkle.entity.Sprinkle;
 import java.io.Serializable;
 import java.util.List;
@@ -18,17 +19,15 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Getter @Setter @ToString
-@Entity(name = "user")
 @AllArgsConstructor
 @NoArgsConstructor
+@Entity
+@Builder
 public class User implements Serializable {
 
 	@Id @GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
 
-	String SprinkleToken;
-
-	@Transient
-	private List<String> SprinkleTokenList;
+	private long budget;
 
 }
