@@ -1,35 +1,17 @@
 package com.kakaopay.flex.api.sprinkle.service;
 
-import com.kakaopay.flex.api.pick.entity.Pick;
-import com.kakaopay.flex.api.pick.repository.PickRepository;
-import com.kakaopay.flex.api.sprinkle.entity.Sprinkle;
-import com.kakaopay.flex.api.sprinkle.repository.SprinkleRepository;
 import com.kakaopay.flex.api.sprinkle.vo.RequestSprinkle;
-import com.kakaopay.flex.api.sprinkle.vo.ResponseSprinkle;
 import com.kakaopay.flex.exception.InvalidRequestException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class SprinkleServiceTest {
 
     @Autowired SprinkleService sprinkleService;
-    @Autowired SprinkleRepository sprinkleRepository;
-    @Autowired PickRepository pickRepository;
 
     private long xUserId = 1;
     private long xUserId2 = 2;
