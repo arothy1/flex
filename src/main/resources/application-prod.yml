@@ -3,19 +3,6 @@ server:
   error:
     include-stacktrace: never
 
-spring:
-  profiles: prod
-  jpa:
-    show-sql: false
-    hibernate:
-      ddl-auto: none
-    database: mysql
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/kakaopay?serverTimezone=UTC
-    username: arothy1
-    password: kakaopay:)
-
 logging:
   level:
     root: error

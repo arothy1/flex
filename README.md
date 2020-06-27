@@ -3,8 +3,22 @@
 >오늘도 Flex 해버렸지 뭐야~
 
 
-##Entity
+##Redis
+배움이 부족하여 원시적인 방법으로 레디스를 사용했다.
+스프링에서 좋은 템플릿이 있다고 들었는데.. 
 
+```
+key: token
+value: {
+    roomCode: "",
+    sendUser: "",
+    sendTime: "",
+    sendMoney: "",
+    receiveUserCount: "",
+    totalFinishReceiveMoney: "",
+    receivedInfoList: []
+}
+```
 >Sprinkle(뿌리기)
 >
 >Pick(줍기)

@@ -158,7 +158,6 @@ public class SprinkleService {
 				.collect(Collectors.toList());
 
 		Sprinkle sprinkle = Sprinkle.builder()
-				.token(token)
 				.roomCode(requestSprinkle.getXRoomId())
 				.sendUser(requestSprinkle.getXUserId())
 				.sendTime(LocalDateTime.now())

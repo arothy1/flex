@@ -16,8 +16,6 @@ import java.util.List;
 @Builder
 public class Sprinkle implements Serializable {
 
-	String token;
-
 	String roomCode;
 
 	long sendUser;
