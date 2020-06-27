@@ -58,14 +58,10 @@ public class SprinkleService {
 
 		int pickedMoney;
 
-		Optional<Sprinkle> maybeSprinkle = sprinkleRepository.findByToken(token);
-		if (maybeSprinkle.isPresent()) {
-			Sprinkle sprinkle = maybeSprinkle.get();
-			if (sprinkle.getSendTime().isBefore(LocalDateTime.now().minusMinutes(10))) {
-				throw new InvalidRequestException("종료된 뿌리기에요");
-			}
-		} else {
-			throw new InvalidRequestException("정상적인 토큰이 아니에요");
+		Sprinkle sprinkle = sprinkleRepository.findByToken(token).orElseThrow(() ->
+				new InvalidRequestException("정상적인 토큰이 아니에요"));
+		if (sprinkle.getSendTime().isBefore(LocalDateTime.now().minusMinutes(10))) {
+			throw new InvalidRequestException("종료된 뿌리기에요");
 		}
 
 		// 토큰에 해당하는 픽 목록을 가져온다.
@@ -77,24 +73,19 @@ public class SprinkleService {
 		}
 		// 받을 픽이 있는지 체크
 		// 방 번호가 같은지 체크
-		Optional<Pick> maybePick = pickList.stream()
+		Pick foundPick = pickList.stream()
 				.filter(pick -> StringUtils.isEmpty(pick.getReceiveUserId()) &&
 							pick.getRoomId().equals(xRoomId))
-				.findFirst();
+				.findFirst()
+				.orElseThrow(() -> new InvalidRequestException("주을돈이 없어요"));
 
-		if (maybePick.isPresent()) {
-			Pick pick = maybePick.get();
-
-			if (pick.getSendUserId() == xUserId) {
-				throw new InvalidRequestException("내가 뿌린 돈은 내가 가져갈 수 없어요");
-			}
-
-			pick.setReceiveUserId(xUserId);
-			pickRepository.save(pick);
-			pickedMoney = pick.getMoney();
-		} else {
-			throw new InvalidRequestException("주을돈이 없어요");
+		if (foundPick.getSendUserId() == xUserId) {
+			throw new InvalidRequestException("내가 뿌린 돈은 내가 가져갈 수 없어요");
 		}
+
+		foundPick.setReceiveUserId(xUserId);
+		pickRepository.save(foundPick);
+		pickedMoney = foundPick.getMoney();
 
 		return pickedMoney;
 	}
@@ -104,41 +95,36 @@ public class SprinkleService {
 		long xUserId = requestSprinkle.getXUserId();
 //		String xRoomId = requestSprinkle.getXRoomId();	// token만 있어도 수행 가능함
 
-		Optional<Sprinkle> maybeSprinkle = this.sprinkleRepository.findByTokenAndSendUserId(token, xUserId);
-		if (maybeSprinkle.isPresent()) {
-			Sprinkle sprinkle = maybeSprinkle.get();
-
-			if (sprinkle.getSendTime().isBefore(LocalDateTime.now().minusDays(7))) {
-				throw new InvalidRequestException("조회기간이 지났어요");
-			}
-
-			LocalDateTime sendTime = sprinkle.getSendTime();
-			int sendMoney = sprinkle.getMoney();
-
-			List<Pick> pickList = this.pickRepository.findByToken(token);
-			int totalReceiveMoney = pickList.stream()
-					.filter(pick -> pick.getReceiveUserId() != null)
-					.mapToInt(pick -> pick.getMoney()).sum();
-
-			List<Map<String, Long>> finishReceiveInfoList = pickList.stream()
-					.filter(pick -> pick.getReceiveUserId() != null)
-					.map(pick -> {
-						Map<String, Long> info = new HashMap<>();
-						info.put("receiveMoney", (long)pick.getMoney());
-						info.put("receiveUserId", pick.getReceiveUserId());
-						return info;
-					})
-					.collect(Collectors.toList());
-
-			return ResponseSprinkle.builder()
-					.sprinkleTime(sendTime)
-					.sprinkleMoney(sendMoney)
-					.finishTotalReceiveMoney(totalReceiveMoney)
-					.finishReceiveInfoList(finishReceiveInfoList)
-					.build();
-		} else {
-			throw new InvalidRequestException("조회할 뿌리기가 없어요");
+		Sprinkle sprinkle = this.sprinkleRepository.findByTokenAndSendUserId(token, xUserId).orElseThrow(() ->
+				new InvalidRequestException("조회할 뿌리기가 없어요"));
+		if (sprinkle.getSendTime().isBefore(LocalDateTime.now().minusDays(7))) {
+			throw new InvalidRequestException("조회기간이 지났어요");
 		}
+
+		LocalDateTime sendTime = sprinkle.getSendTime();
+		int sendMoney = sprinkle.getMoney();
+
+		List<Pick> pickList = this.pickRepository.findByToken(token);
+		int totalReceiveMoney = pickList.stream()
+				.filter(pick -> pick.getReceiveUserId() != null)
+				.mapToInt(pick -> pick.getMoney()).sum();
+
+		List<Map<String, Long>> finishReceiveInfoList = pickList.stream()
+				.filter(pick -> pick.getReceiveUserId() != null)
+				.map(pick -> {
+					Map<String, Long> info = new HashMap<>();
+					info.put("receiveMoney", (long)pick.getMoney());
+					info.put("receiveUserId", pick.getReceiveUserId());
+					return info;
+				})
+				.collect(Collectors.toList());
+
+		return ResponseSprinkle.builder()
+				.sprinkleTime(sendTime)
+				.sprinkleMoney(sendMoney)
+				.finishTotalReceiveMoney(totalReceiveMoney)
+				.finishReceiveInfoList(finishReceiveInfoList)
+				.build();
 	}
 
 
