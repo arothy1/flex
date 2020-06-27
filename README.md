@@ -1,6 +1,11 @@
 # flex project
 >오늘도 Flex 해버렸지 뭐야~
 
+# master-redis branch
+> 레디스로 구현해보았다.
+>
+> https://github.com/arothy1/flex/tree/master-redis
+
 
 ## Entity
 >Sprinkle(뿌리기)
