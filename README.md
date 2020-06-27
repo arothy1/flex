@@ -19,9 +19,6 @@ value: {
     receivedInfoList: []
 }
 ```
->Sprinkle(뿌리기)
->
->Pick(줍기)
 
 
 ## 뿌리기
