@@ -7,6 +7,7 @@ import com.kakaopay.flex.api.sprinkle.repository.SprinkleRepository;
 import com.kakaopay.flex.api.sprinkle.vo.RequestSprinkle;
 import com.kakaopay.flex.api.sprinkle.vo.ResponseSprinkle;
 import com.kakaopay.flex.exception.InvalidRequestException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -18,26 +19,28 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class SprinkleService {
 
-	public SprinkleService(SprinkleRepository sprinkleRepository, PickRepository pickRepository) {
-		this.sprinkleRepository = sprinkleRepository;
-		this.pickRepository = pickRepository;
-	}
-
-	private SprinkleRepository sprinkleRepository;
-	private PickRepository pickRepository;
-
-	private String token;
-	private long xUserId;
-	private String xRoomId;
+	private final SprinkleRepository sprinkleRepository;
+	private final PickRepository pickRepository;
 
 	@Transactional
 	public String doSprinkle(RequestSprinkle requestSprinkle) {
-		this.token = this.getGeneratedToken();
-		this.xUserId = requestSprinkle.getXUserId();
-		this.xRoomId = requestSprinkle.getXRoomId();
+		String token = this.getGeneratedToken();
+		requestSprinkle.setGeneratedToken(token);
+
+		int sprinkleMoney = requestSprinkle.getSprinkleMoney();
+		int receiveUserCount = requestSprinkle.getReceiveUserCount();
+
+		if (receiveUserCount < 1) {
+			throw new InvalidRequestException("주워갈 인원을 한 명이상 입력해주세요");
+		}
+
+		if (sprinkleMoney < receiveUserCount) {
+			throw new InvalidRequestException("인원보다 많은 금액을 입력해주세요");
+		}
 
 		// 1. 뿌리기를 하자
 		this.insertSprinkle(requestSprinkle);
@@ -49,48 +52,44 @@ public class SprinkleService {
 
 	@Transactional
 	public Integer doReceive(RequestSprinkle requestSprinkle) {
-		this.token = requestSprinkle.getToken();
-		this.xUserId = requestSprinkle.getXUserId();
-		this.xRoomId = requestSprinkle.getXRoomId();
+		String token = requestSprinkle.getToken();
+		long xUserId = requestSprinkle.getXUserId();
+		String xRoomId = requestSprinkle.getXRoomId();
 
 		int pickedMoney;
 
-		Optional<Sprinkle> maybeSprinkle = sprinkleRepository.findByToken(this.token);
+		Optional<Sprinkle> maybeSprinkle = sprinkleRepository.findByToken(token);
 		if (maybeSprinkle.isPresent()) {
 			Sprinkle sprinkle = maybeSprinkle.get();
-			if (sprinkle.getSendTime().isBefore(LocalDateTime.now().minusMinutes(10))) {//FIXME TEST
+			if (sprinkle.getSendTime().isBefore(LocalDateTime.now().minusMinutes(10))) {
 				throw new InvalidRequestException("종료된 뿌리기에요");
 			}
+		} else {
+			throw new InvalidRequestException("정상적인 토큰이 아니에요");
 		}
 
 		// 토큰에 해당하는 픽 목록을 가져온다.
-		List<Pick> pickList = pickRepository.findByToken(this.token);
+		List<Pick> pickList = pickRepository.findByToken(token);
 
 		// 이미 받은 유저인지 체크한다.
-		if (getIsAlreadyPicked(pickList)) {
+		if (getIsAlreadyPicked(pickList, xUserId)) {
 			throw new InvalidRequestException("이미 받았어요");
 		}
 		// 받을 픽이 있는지 체크
 		// 방 번호가 같은지 체크
 		Optional<Pick> maybePick = pickList.stream()
-				.filter(pick -> {
-					if (StringUtils.isEmpty(pick.getReceiveUserId()) &&
-							pick.getRoomId().equals(this.xRoomId)){
-						return true;
-					} else {
-						return false;
-					}
-				})
+				.filter(pick -> StringUtils.isEmpty(pick.getReceiveUserId()) &&
+							pick.getRoomId().equals(xRoomId))
 				.findFirst();
 
 		if (maybePick.isPresent()) {
 			Pick pick = maybePick.get();
 
-			if (pick.getSendUserId() == this.xUserId) {
+			if (pick.getSendUserId() == xUserId) {
 				throw new InvalidRequestException("내가 뿌린 돈은 내가 가져갈 수 없어요");
 			}
 
-			pick.setReceiveUserId(this.xUserId);
+			pick.setReceiveUserId(xUserId);
 			pickRepository.save(pick);
 			pickedMoney = pick.getMoney();
 		} else {
@@ -101,11 +100,11 @@ public class SprinkleService {
 	}
 
 	public ResponseSprinkle getSprinkle(RequestSprinkle requestSprinkle) {
-		this.token = requestSprinkle.getToken();
-		this.xUserId = requestSprinkle.getXUserId();
-		this.xRoomId = requestSprinkle.getXRoomId();
+		String token = requestSprinkle.getToken();
+		long xUserId = requestSprinkle.getXUserId();
+//		String xRoomId = requestSprinkle.getXRoomId();	// token만 있어도 수행 가능함
 
-		Optional<Sprinkle> maybeSprinkle = this.sprinkleRepository.findByTokenAndSendUserId(this.token, this.xUserId);
+		Optional<Sprinkle> maybeSprinkle = this.sprinkleRepository.findByTokenAndSendUserId(token, xUserId);
 		if (maybeSprinkle.isPresent()) {
 			Sprinkle sprinkle = maybeSprinkle.get();
 
@@ -116,29 +115,27 @@ public class SprinkleService {
 			LocalDateTime sendTime = sprinkle.getSendTime();
 			int sendMoney = sprinkle.getMoney();
 
-			List<Pick> pickList = this.pickRepository.findByToken(this.token);
+			List<Pick> pickList = this.pickRepository.findByToken(token);
 			int totalReceiveMoney = pickList.stream()
 					.filter(pick -> pick.getReceiveUserId() != null)
-					.collect(Collectors.summingInt(value -> value.getMoney()));
+					.mapToInt(pick -> pick.getMoney()).sum();
 
 			List<Map<String, Long>> finishReceiveInfoList = pickList.stream()
 					.filter(pick -> pick.getReceiveUserId() != null)
 					.map(pick -> {
-						Map<String, Long> info = new HashMap();
-						info.put("receiveMoney", Long.valueOf(pick.getMoney()));
+						Map<String, Long> info = new HashMap<>();
+						info.put("receiveMoney", (long)pick.getMoney());
 						info.put("receiveUserId", pick.getReceiveUserId());
 						return info;
 					})
 					.collect(Collectors.toList());
 
-			ResponseSprinkle responseSprinkle = ResponseSprinkle.builder()
+			return ResponseSprinkle.builder()
 					.sprinkleTime(sendTime)
 					.sprinkleMoney(sendMoney)
 					.finishTotalReceiveMoney(totalReceiveMoney)
 					.finishReceiveInfoList(finishReceiveInfoList)
 					.build();
-
-			return responseSprinkle;
 		} else {
 			throw new InvalidRequestException("조회할 뿌리기가 없어요");
 		}
@@ -149,9 +146,9 @@ public class SprinkleService {
 		int sprinkleMoney = requestSprinkle.getSprinkleMoney();
 
 		Sprinkle sprinkle = Sprinkle.builder()
-				.token(this.token)
+				.token(requestSprinkle.getGeneratedToken())
 				.receiveTargetCount(requestSprinkle.getReceiveUserCount())
-				.sendUserId(this.xUserId)
+				.sendUserId(requestSprinkle.getXUserId())
 				.sendTime(LocalDateTime.now())
 				.money(sprinkleMoney)
 				.build();
@@ -165,9 +162,9 @@ public class SprinkleService {
 		List<Integer> divisionMoneyList = getDivisionMoneyList(sprinkleMoney, receiveUserCount);
 		List<Pick> pickList = divisionMoneyList.stream()
 				.map(divisionMoney -> Pick.builder()
-						.token(this.token)
-						.roomId(this.xRoomId)
-						.sendUserId(this.xUserId)
+						.token(requestSprinkle.getGeneratedToken())
+						.roomId(requestSprinkle.getXRoomId())
+						.sendUserId(requestSprinkle.getXUserId())
 						.money(divisionMoney)
 						.sprinkleDate(LocalDateTime.now())
 						.build())
@@ -175,15 +172,14 @@ public class SprinkleService {
 		pickRepository.saveAll(pickList);
 	}
 
-	private boolean getIsAlreadyPicked(List<Pick> pickList) {
-		boolean isAlreadyPicked = pickList.stream()
-				.anyMatch(pick -> pick.getReceiveUserId() != null && pick.getReceiveUserId() == this.xUserId);
-		return isAlreadyPicked;
+	private boolean getIsAlreadyPicked(List<Pick> pickList, long xUserId) {
+		return pickList.stream()
+				.anyMatch(pick -> pick.getReceiveUserId() != null && pick.getReceiveUserId() == xUserId);
 	}
 
 	private String getGeneratedToken() {
 		char[] characters = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','0','1','2','3','4','5','6','7','8','9'};
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		Random rn = new Random();
 
 		for( int i = 0 ; i < 3 ; i++ ){
@@ -201,12 +197,14 @@ public class SprinkleService {
 
 	private List<Integer> getDivisionMoneyList(int money, int divisionCount) {
 		int lessMoney = money;
+		int lessCount = divisionCount;
 
 		Random rn = new Random();
 		List<Integer> resultList = new ArrayList<>();
 
 		for (int i = 0; i < divisionCount - 1; i++) {
-			int randomMoney = rn.nextInt(lessMoney - divisionCount - i);
+			--lessCount;
+			int randomMoney = rn.nextInt(lessMoney + 1 - lessCount);
 			lessMoney -= randomMoney;
 			resultList.add(randomMoney);
 		}

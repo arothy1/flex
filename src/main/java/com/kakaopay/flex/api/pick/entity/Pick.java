@@ -12,13 +12,14 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-@Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode
 @Builder
+@Entity
 public class Pick implements Serializable {
 
-	@Id @GeneratedValue(strategy = GenerationType.AUTO)
+	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 
 	private String token;

@@ -25,52 +25,52 @@ public class SprinkleController {
 	}
 
 	@GetMapping(value = "/healthCheck")
-	public Object healthCheck() {
+	public String healthCheck() {
 		return "sprinkle is run!";
 	}
 
-	@PostMapping(value="")
-	public Object doSprinkle(@RequestBody RequestSprinkle requestSprinkle,
-							 @RequestHeader("X-USER-ID") String xUserId,
+	@PostMapping
+	public ResponseEntity doSprinkle(@RequestBody RequestSprinkle requestSprinkle,
+							 @RequestHeader("X-USER-ID") long xUserId,
 							 @RequestHeader("X-ROOM-ID") String xRoomId) {
 		try {
-			requestSprinkle.setXUserId(Long.parseLong(xUserId));
+			requestSprinkle.setXUserId(xUserId);
 			requestSprinkle.setXRoomId(xRoomId);
 			return ResponseEntity.ok(sprinkleService.doSprinkle(requestSprinkle));
-		} catch (NumberFormatException  | DuplicateKeyException e) {
+		} catch (DuplicateKeyException e) {
 			log.error("{}", e);
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+			throw new ResponseStatusException(HttpStatus.ACCEPTED, e.getMessage(), e);
 		}
 	}
 
-	@PutMapping(value="")
-	public Object doReceive(@RequestBody RequestSprinkle requestSprinkle,
-							@RequestHeader("X-USER-ID") String xUserId,
+	@PutMapping
+	public ResponseEntity doReceive(@RequestBody RequestSprinkle requestSprinkle,
+							@RequestHeader("X-USER-ID") long xUserId,
 							@RequestHeader("X-ROOM-ID") String xRoomId) {
 		try {
-			requestSprinkle.setXUserId(Long.parseLong(xUserId));
+			requestSprinkle.setXUserId(xUserId);
 			requestSprinkle.setXRoomId(xRoomId);
 			return ResponseEntity.ok(sprinkleService.doReceive(requestSprinkle));
-		} catch (NumberFormatException | InvalidRequestException e) {
+		} catch (InvalidRequestException e) {
 			log.error("{}", e);
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+			throw new ResponseStatusException(HttpStatus.ACCEPTED, e.getMessage(), e);
 		}
 	}
 
-	@GetMapping(value="/{token}")
-	public Object getSprinkle(@PathVariable String token,
-							  @RequestHeader("X-USER-ID") String xUserId,
+	@GetMapping(value = "/{token}")
+	public ResponseEntity getSprinkle(@PathVariable String token,
+							  @RequestHeader("X-USER-ID") long xUserId,
 							  @RequestHeader("X-ROOM-ID") String xRoomId) {
 		try {
 			RequestSprinkle requestSprinkle = RequestSprinkle.builder()
-					.xUserId(Long.parseLong(xUserId))
+					.xUserId(xUserId)
 					.xRoomId(xRoomId)
 					.token(token)
 					.build();
 			return ResponseEntity.ok(sprinkleService.getSprinkle(requestSprinkle));
-		} catch (NumberFormatException | InvalidRequestException e) {
+		} catch (InvalidRequestException e) {
 			log.error("{}", e);
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+			throw new ResponseStatusException(HttpStatus.ACCEPTED, e.getMessage(), e);
 		}
 	}
 

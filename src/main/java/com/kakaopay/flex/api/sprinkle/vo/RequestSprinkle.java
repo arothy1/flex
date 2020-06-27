@@ -1,5 +1,6 @@
 package com.kakaopay.flex.api.sprinkle.vo;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.*;
 
 import java.io.Serializable;
@@ -10,6 +11,8 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@JsonAutoDetect
+@EqualsAndHashCode
 public class RequestSprinkle implements Serializable {
 
 	private long xUserId;
@@ -17,5 +20,6 @@ public class RequestSprinkle implements Serializable {
 	private int sprinkleMoney;
 	private int receiveUserCount;
 	private String token;
+	private String generatedToken;
 
 }
