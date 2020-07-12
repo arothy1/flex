@@ -1,10 +1,9 @@
 # flex project
->오늘도 Flex 해버렸지 뭐야~
+>카카오페이 뿌리기 과제
 
-# master-redis branch
-> 레디스로 구현해보았다.
->
-> https://github.com/arothy1/flex/tree/master-redis
+## 뿌리기 기능 구현
+## 받기 기능 구현
+## 뿌리기 죄회 기능 구현
 
 
 ## Entity
